@@ -1,0 +1,6 @@
+{
+  "name": "Production Solution",
+  "description": "Comprehensive RMG Production tracking: Workers, Cutting Inputs, Line Outputs, and Materials (Zipper, Label, Thread) with size-wise monitoring.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}

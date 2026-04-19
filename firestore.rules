@@ -1,0 +1,125 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // --- Validations ---
+    function isValidWorker(data) {
+      return data.keys().hasAll(['worker_id', 'name']) &&
+             data.worker_id is string && data.worker_id.size() <= 50 &&
+             data.name is string && data.name.size() <= 100 &&
+             ( !('phone' in data) || (data.phone is string && data.phone.size() <= 20) ) &&
+             ( !('skill' in data) || (data.skill is string && data.skill.size() <= 100) ) &&
+             ( !('designation' in data) || (data.designation is string && data.designation.size() <= 100) ) &&
+             ( !('line_no' in data) || (data.line_no is string && data.line_no.size() <= 50) ) &&
+             ( !('join_date' in data) || (data.join_date is string && data.join_date.size() <= 20) );
+    }
+
+    function isValidAttendance(data) {
+      return data.keys().hasAll(['worker_id', 'worker_name', 'date', 'status']) &&
+             data.worker_id is string && data.worker_id.size() <= 50 &&
+             data.worker_name is string && data.worker_name.size() <= 100 &&
+             data.date is string && data.date.size() <= 20 &&
+             data.status in ['present', 'absent'] &&
+             ( !('reason' in data) || (data.reason is string && data.reason.size() <= 1000) ) &&
+             ( !('line_no' in data) || (data.line_no is string && data.line_no.size() <= 50) ) &&
+             ( !('updatedAt' in data) || data.updatedAt is timestamp );
+    }
+
+    function isValidAttendanceSession(data) {
+      return data.keys().hasAll(['date', 'presentCount', 'absentCount', 'totalWorkers']) &&
+             data.date is string && data.date.size() <= 20 &&
+             data.presentCount is number &&
+             data.absentCount is number &&
+             data.totalWorkers is number &&
+             ( !('updatedAt' in data) || data.updatedAt is timestamp );
+    }
+
+    function isValidDetail(detail) {
+      return detail.keys().hasAll(['cutting_no', 'size', 'quantity']) &&
+             detail.cutting_no is string &&
+             detail.size is string &&
+             detail.quantity is number &&
+             ( !('body_size' in detail) || detail.body_size is string ) &&
+             ( !('zipper_size' in detail) || detail.zipper_size is string ) &&
+             ( !('country' in detail) || detail.country is string );
+    }
+
+    function isValidProductionBase(data) {
+      return data.keys().hasAll(['date', 'po_pf', 'buyer', 'color', 'details', 'quantity']) &&
+             data.date is string && data.po_pf is string && data.buyer is string && 
+             data.color is string && data.details is list && data.quantity is number;
+    }
+
+    match /workers/{workerId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidWorker(incoming());
+      allow update: if isSignedIn() && isValidWorker(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /inputs/{inputId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidProductionBase(incoming());
+      allow update: if isSignedIn() && isValidProductionBase(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /outputs/{outputId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidProductionBase(incoming());
+      allow update: if isSignedIn() && isValidProductionBase(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /zippers/{zipperId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidProductionBase(incoming());
+      allow update: if isSignedIn() && isValidProductionBase(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /labels/{labelId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidProductionBase(incoming());
+      allow update: if isSignedIn() && isValidProductionBase(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /threads/{threadId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidProductionBase(incoming());
+      allow update: if isSignedIn() && isValidProductionBase(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidAttendance(incoming());
+      allow update: if isSignedIn() && isValidAttendance(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /attendance_sessions/{sessionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidAttendanceSession(incoming());
+      allow update: if isSignedIn() && isValidAttendanceSession(incoming());
+      allow delete: if isSignedIn();
+    }
+    
+    // Test collection
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

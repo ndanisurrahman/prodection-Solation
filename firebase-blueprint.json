@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "Worker": {
+      "title": "Worker",
+      "description": "Apparel production worker details.",
+      "type": "object",
+      "properties": {
+        "worker_id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "skill": { "type": "string" },
+        "designation": { "type": "string" },
+        "line_no": { "type": "string" },
+        "join_date": { "type": "string" }
+      },
+      "required": ["worker_id", "name"]
+    },
+    "RowDetail": {
+      "title": "Row Detail",
+      "description": "Nested size and quantity detail.",
+      "type": "object",
+      "properties": {
+        "cutting_no": { "type": "string" },
+        "size": { "type": "string" },
+        "quantity": { "type": "number" },
+        "body_size": { "type": "string" },
+        "zipper_size": { "type": "string" },
+        "country": { "type": "string" }
+      },
+      "required": ["cutting_no", "size", "quantity"]
+    },
+    "ProductionBase": {
+      "title": "Production Record",
+      "description": "Base for input, output, and materials tracking.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "po_pf": { "type": "string" },
+        "buyer": { "type": "string" },
+        "color": { "type": "string" },
+        "details": { "type": "array", "items": { "$ref": "#/entities/RowDetail" } },
+        "quantity": { "type": "number" }
+      },
+      "required": ["date", "po_pf", "buyer", "color", "details", "quantity"]
+    },
+    "Attendance": {
+      "title": "Attendance record",
+      "description": "Daily worker attendance log.",
+      "type": "object",
+      "properties": {
+        "worker_id": { "type": "string" },
+        "worker_name": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["present", "absent"] },
+        "reason": { "type": "string" },
+        "line_no": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["worker_id", "worker_name", "date", "status"]
+    },
+    "AttendanceSession": {
+      "title": "Attendance Session",
+      "description": "Summary metadata for a day of attendance.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "presentCount": { "type": "integer" },
+        "absentCount": { "type": "integer" },
+        "totalWorkers": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "presentCount", "absentCount", "totalWorkers"]
+    }
+  },
+  "firestore": {
+    "/workers/{workerId}": { "schema": "Worker", "description": "Worker profiles" },
+    "/inputs/{inputId}": { "schema": "ProductionBase", "description": "Cutting inputs" },
+    "/outputs/{outputId}": { "schema": "ProductionBase", "description": "Production outputs" },
+    "/zippers/{zipperId}": { "schema": "ProductionBase", "description": "Zipper consumption" },
+    "/labels/{labelId}": { "schema": "ProductionBase", "description": "Label consumption" },
+    "/threads/{threadId}": { "schema": "ProductionBase", "description": "Thread consumption and time tracking" },
+    "/attendance/{attendanceId}": { "schema": "Attendance", "description": "Daily attendance logs" },
+    "/attendance_sessions/{sessionId}": { "schema": "AttendanceSession", "description": "Daily attendance summaries" }
+  }
+}
