@@ -1,6 +1,7 @@
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+// @ts-ignore
 import localConfig from '../../firebase-applet-config.json';
 
 // Support both environment variables (for Netlify/Vercel) and the config file (for local/preview)
@@ -16,13 +17,15 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase safely
-let app;
-try {
-  if (firebaseConfig.apiKey) {
+let app = null;
+const isConfigValid = !!firebaseConfig.apiKey;
+
+if (isConfigValid) {
+  try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  } catch (error) {
+    console.error("Firebase initialization failed:", error);
   }
-} catch (error) {
-  console.error("Firebase initialization failed:", error);
 }
 
 export const auth = app ? getAuth(app) : null;
@@ -30,18 +33,4 @@ export const db = app ? getFirestore(app, firebaseConfig.firestoreDatabaseId || 
 export const googleProvider = new GoogleAuthProvider();
 export const loginWithGoogle = () => (auth && !auth.currentUser) ? signInWithPopup(auth, googleProvider) : Promise.resolve();
 export const logout = () => auth ? signOut(auth) : Promise.resolve();
-
-// Test connection
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-    console.log("Firebase Connected");
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('permission-denied')) {
-        console.log("Firebase Connected (Rules protected)");
-    } else if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
-    }
-  }
-}
-testConnection();
+export const hasConfig = isConfigValid;
