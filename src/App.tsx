@@ -48,8 +48,15 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const minLoadingTime = 3000; // 3 seconds
+    const minLoadingTime = 3000;
     const startTime = Date.now();
+
+    if (!auth) {
+      console.error("Firebase Auth is not initialized. Please check your config.");
+      setInitializing(false);
+      setShowLoading(false);
+      return;
+    }
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
